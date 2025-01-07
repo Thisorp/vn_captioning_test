@@ -25,7 +25,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 from typing import Tuple,List
 
-
 class RNetvI(nn.Module):
     """
         Class implementing LSTM unit with Cell and Hidden state initialized at ZEROS and features coming from external as 1st input
@@ -173,38 +172,3 @@ class RNetvI(nn.Module):
                     break
             sampled_ids = torch.stack(sampled_ids, 1)                # sampled_ids: (1, captions_length)
         return sampled_ids
-
-class RNetvI(IDecoder):
-    def __init__(self, hidden_dim, padding_index, vocab_size, embedding_dim, device, attention=None):
-        super(RNetvI, self).__init__()
-        self.hidden_dim = hidden_dim
-        self.padding_index = padding_index
-        self.vocab_size = vocab_size
-        self.embedding_dim = embedding_dim
-        self.device = device
-        self.attention = attention
-        self.embedding = nn.Embedding(vocab_size, embedding_dim, padding_idx=padding_index)
-        self.lstm = nn.LSTM(embedding_dim, hidden_dim, batch_first=True)
-        self.fc = nn.Linear(hidden_dim, vocab_size)
-        self.vocabulary = None  # Bạn cần gán Vocabulary sau khi khởi tạo
-
-    def generate_caption(self, features: torch.Tensor, max_length: int) -> List[int]:
-        """
-        Generate a caption for the given image features.
-        """
-        caption = [self.vocabulary.word2id["<START>"]]
-        hidden = None  # Initialize hidden state if needed
-
-        for _ in range(max_length):
-            inputs = torch.tensor(caption[-1]).unsqueeze(0).to(self.device)
-            embeddings = self.embedding(inputs).unsqueeze(0)  # Shape: (1, 1, embedding_dim)
-            output, hidden = self.lstm(embeddings, hidden)    # output: (1, 1, hidden_dim)
-            output = self.fc(output.squeeze(0))              # Shape: (1, vocab_size)
-            _, predicted = torch.max(output, 1)              # predicted: (1,)
-            predicted_id = predicted.item()
-            caption.append(predicted_id)
-
-            if predicted_id == self.vocabulary.word2id["<EOS>"]:
-                break
-
-        return caption
